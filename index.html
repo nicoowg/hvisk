@@ -1,0 +1,775 @@
+<!doctype html>
+<html lang="da">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,interactive-widget=resizes-content">
+<meta name="theme-color" content="#060607">
+<meta name="referrer" content="no-referrer">
+<title>hvisk</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+:root{
+  --red:#db2430; --red2:#ff4b55; --ink:#060607; --glass:rgba(22,22,26,.62); --glass2:rgba(255,255,255,.045);
+  --line:rgba(255,255,255,.075); --dim:rgba(255,255,255,.5); --faint:rgba(255,255,255,.28);
+  --ease:cubic-bezier(.2,.8,.2,1); --spring:cubic-bezier(.34,1.56,.64,1);
+  --font:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono","Cascadia Mono","Cascadia Code",Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--ink);color:#fff;font:15px/1.45 var(--font);-webkit-font-smoothing:antialiased;overflow:hidden}
+button,input,textarea{font:inherit;color:inherit;background:none;border:0;outline:0}
+button{cursor:pointer}
+:focus-visible{outline:1.5px solid rgba(255,255,255,.55);outline-offset:2px;border-radius:10px}
+input:focus-visible,textarea:focus-visible{outline:0}
+[hidden]{display:none!important}
+::selection{background:rgba(219,36,48,.55)}
+*{scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.14) transparent}
+::-webkit-scrollbar{width:8px;height:8px}::-webkit-scrollbar-thumb{background:rgba(255,255,255,.12);border-radius:8px;border:2px solid transparent;background-clip:padding-box}::-webkit-scrollbar-track{background:transparent}
+svg.i{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* ---- rum: ét drivende lys, korn ---- */
+#sky{position:fixed;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.glow{position:absolute;border-radius:50%;filter:blur(70px);will-change:transform}
+.g1{width:62vmax;height:62vmax;left:-14vmax;top:-22vmax;background:radial-gradient(circle,rgba(219,36,48,.42),rgba(219,36,48,0) 66%);animation:d1 38s ease-in-out infinite alternate}
+.g2{width:46vmax;height:46vmax;right:-18vmax;bottom:-20vmax;background:radial-gradient(circle,rgba(150,20,32,.32),rgba(150,20,32,0) 66%);animation:d2 46s ease-in-out infinite alternate}
+@keyframes d1{to{transform:translate(34vw,40vh) scale(1.15)}}
+@keyframes d2{to{transform:translate(-40vw,-34vh) scale(.9)}}
+#grain{position:absolute;inset:-50%;opacity:.07;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");animation:grain 1.2s steps(6) infinite}
+@keyframes grain{0%{transform:translate(0,0)}20%{transform:translate(-3%,2%)}40%{transform:translate(2%,-4%)}60%{transform:translate(-4%,-1%)}80%{transform:translate(3%,3%)}}
+#fx{position:fixed;inset:0;z-index:50;pointer-events:none}
+body.pulse #sky .g1{animation-duration:6s}
+
+.glass{background:var(--glass);border:1px solid var(--line);backdrop-filter:blur(22px) saturate(1.3);-webkit-backdrop-filter:blur(22px) saturate(1.3)}
+.screen{position:fixed;inset:0;z-index:2;display:flex;transition:opacity .5s var(--ease),transform .6s var(--ease),filter .6s var(--ease)}
+.screen.off{opacity:0;pointer-events:none;transform:scale(.97);filter:blur(8px)}
+
+/* ---- dør ---- */
+#door{align-items:center;justify-content:center;padding:24px}
+.door{width:min(420px,100%);display:flex;flex-direction:column;gap:22px}
+.mark{display:flex;align-items:center;gap:14px;margin-bottom:6px}
+.mark svg{width:44px;height:44px}
+.mark h1{font-weight:300;font-size:44px;letter-spacing:-.04em;line-height:1}
+.mark h1 b{font-weight:600;color:var(--red2)}
+.field{display:flex;align-items:center;gap:10px;border-radius:16px;padding:0 16px;height:52px;transition:border-color .25s}
+.field:focus-within{border-color:rgba(255,255,255,.2)}
+.field input{flex:1;min-width:0;height:100%}
+.field input::placeholder{color:var(--faint)}
+.field .i{color:var(--faint)}
+.row{display:flex;gap:10px}
+.btn{height:50px;border-radius:16px;padding:0 18px;display:inline-flex;align-items:center;justify-content:center;gap:9px;font-weight:550;transition:transform .2s var(--ease),background .25s,opacity .25s}
+.btn:active{transform:scale(.97)}
+.btn.red{background:var(--red);box-shadow:0 10px 40px -10px rgba(219,36,48,.7),inset 0 1px 0 rgba(255,255,255,.18)}
+.btn.red:hover{background:#e52a37}
+.btn.ghost{background:var(--glass2);border:1px solid var(--line)}
+.btn.ghost:hover{background:rgba(255,255,255,.08)}
+.btn[disabled]{opacity:.35;pointer-events:none}
+.grow{flex:1}
+#rooms{display:flex;flex-direction:column;gap:8px;max-height:38vh;overflow:auto;margin:0 -4px;padding:0 4px}
+.rc{display:flex;align-items:center;gap:14px;padding:12px 14px;border-radius:16px;text-align:left;transition:background .2s,transform .2s var(--ease)}
+.rc:hover{background:rgba(255,255,255,.06)}
+.rc:active{transform:scale(.985)}
+.rc svg.sig{width:36px;height:36px;flex:none}
+.rc .t{flex:1;min-width:0}
+.rc .t b{display:block;font-weight:550;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.rc .t span{font:12px var(--mono);color:var(--faint)}
+.rc .x{opacity:0;color:var(--faint);padding:6px;border-radius:10px;transition:opacity .2s}
+.rc:hover .x{opacity:1}.rc .x:hover{color:#fff;background:rgba(255,255,255,.07)}
+@media (hover:none){.rc .x{opacity:.6}}
+
+/* ---- chat ---- */
+#chat{flex-direction:column}
+.top{position:relative;z-index:3;margin:12px 12px 0;border-radius:20px;height:62px;display:flex;align-items:center;gap:12px;padding:0 10px 0 8px}
+.ib{width:40px;height:40px;border-radius:13px;display:grid;place-items:center;color:rgba(255,255,255,.75);transition:background .2s,color .2s,transform .2s var(--ease)}
+.ib:hover{background:rgba(255,255,255,.07);color:#fff}
+.ib:active{transform:scale(.92)}
+.ib.on{color:var(--red2)}
+.top .sigw{width:40px;height:40px;cursor:pointer;flex:none;transition:transform .5s var(--spring)}
+.top .sigw:hover{transform:rotate(30deg)}
+.top .sigw svg{width:100%;height:100%}
+.who{flex:1;min-width:0;cursor:pointer}
+.who b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;letter-spacing:-.01em}
+.who span{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--dim);white-space:nowrap;overflow:hidden}
+.dot{width:7px;height:7px;border-radius:50%;background:#555;flex:none;transition:background .4s,box-shadow .4s}
+.dot.live{background:var(--red2);box-shadow:0 0 10px var(--red2)}
+.peers{display:flex;margin-right:2px}
+.peers i{width:26px;height:26px;border-radius:50%;margin-left:-7px;border:2px solid #121215;display:grid;place-items:center;font:600 11px var(--font);font-style:normal;animation:pop .45s var(--spring)}
+@keyframes pop{from{transform:scale(0)}}
+
+#feed{flex:1;overflow-y:auto;overflow-x:hidden;padding:18px 14px 8px;display:flex;flex-direction:column;gap:3px;scroll-behavior:smooth;mask-image:linear-gradient(transparent,#000 22px)}
+#feed .space{flex:1}
+.day{align-self:center;font:11px var(--mono);letter-spacing:.08em;color:var(--faint);margin:14px 0 8px;text-transform:uppercase}
+.sys{align-self:center;font-size:12.5px;color:var(--faint);margin:6px 0;display:flex;gap:8px;align-items:center}
+.m{display:flex;gap:9px;align-items:flex-end;max-width:min(560px,82%);animation:min .55s var(--ease) both}
+.m.me{align-self:flex-end;flex-direction:row-reverse}
+.m.join{margin-top:10px}
+@keyframes min{from{opacity:0;transform:translateY(14px) scale(.96)}}
+.m .av{width:28px;height:28px;flex:none;border-radius:50%;display:grid;place-items:center;font:600 12px var(--font);visibility:hidden}
+.m.last .av{visibility:visible}
+.m.me .av{display:none}
+.bub{position:relative;border-radius:20px;padding:9px 14px 7px;background:rgba(32,32,37,.72);border:1px solid var(--line);word-wrap:break-word;overflow-wrap:anywhere;white-space:pre-wrap;min-width:64px}
+.m.me .bub{background:linear-gradient(160deg,#e02a36,#b81823);border-color:rgba(255,255,255,.1)}
+.m:not(.me).last .bub{border-bottom-left-radius:7px}
+.m.me.last .bub{border-bottom-right-radius:7px}
+.bub .nm{display:block;font-size:12px;font-weight:600;margin-bottom:1px}
+.bub .meta{display:flex;justify-content:flex-end;align-items:center;gap:4px;font:10.5px var(--mono);opacity:.5;margin-top:2px;float:right;margin-left:12px;position:relative;top:5px}
+.bub .meta svg{width:13px;height:13px}
+.bub img{display:block;max-width:100%;max-height:340px;border-radius:13px;margin:2px -8px 4px;width:calc(100% + 16px);object-fit:cover;cursor:zoom-in}
+.bub .ct{display:block;font:10px/1.3 var(--mono);color:rgba(255,255,255,.55);max-height:0;overflow:hidden;white-space:nowrap;text-overflow:clip;transition:max-height .4s var(--ease),opacity .8s;opacity:0}
+.bub .ct.show{max-height:16px;opacity:1}
+.m.burn .bub{box-shadow:0 0 0 1px rgba(255,120,60,.35),0 0 30px -8px rgba(255,90,40,.6)}
+.ring{width:14px;height:14px;transform:rotate(-90deg)}
+.ring circle{fill:none;stroke:currentColor;stroke-width:3}
+.ring .bg{opacity:.25}
+.m.gone{animation:gone .7s var(--ease) forwards}
+@keyframes gone{to{opacity:0;filter:blur(6px);transform:translateY(-8px) scale(.94)}}
+.m.bad .bub{border-color:rgba(255,200,0,.35)}
+.scr{color:rgba(255,255,255,.55)}
+
+#typing{height:22px;padding:0 22px;font-size:12px;color:var(--dim);display:flex;align-items:center;gap:8px;opacity:0;transition:opacity .3s}
+#typing.on{opacity:1}
+.wave{display:inline-flex;gap:3px}.wave i{width:4px;height:4px;border-radius:50%;background:currentColor;animation:wv 1.1s infinite}
+.wave i:nth-child(2){animation-delay:.15s}.wave i:nth-child(3){animation-delay:.3s}
+@keyframes wv{0%,60%,100%{transform:none;opacity:.4}30%{transform:translateY(-4px);opacity:1}}
+
+.dock{margin:0 12px calc(12px + env(safe-area-inset-bottom));border-radius:24px;padding:7px;display:flex;align-items:flex-end;gap:4px;position:relative;z-index:3;transition:box-shadow .4s}
+.dock.burning{box-shadow:0 0 0 1px rgba(255,110,50,.35),0 0 50px -14px rgba(255,90,40,.8)}
+#msg{flex:1;resize:none;min-height:40px;max-height:160px;padding:9px 8px;line-height:1.45;overflow-y:auto}
+#msg::placeholder{color:var(--faint)}
+#send{width:40px;height:40px;border-radius:14px;display:grid;place-items:center;background:var(--red);transition:transform .3s var(--spring),opacity .25s,background .2s}
+#send:disabled{opacity:.25;transform:scale(.86)}
+#send:not(:disabled):hover{background:#e52a37}
+#burnsel{position:absolute;bottom:58px;left:46px;border-radius:16px;padding:5px;display:flex;gap:2px;opacity:0;transform:translateY(8px) scale(.96);pointer-events:none;transition:all .25s var(--ease)}
+#burnsel.on{opacity:1;transform:none;pointer-events:auto}
+#burnsel button{padding:7px 11px;border-radius:11px;font:12px var(--mono);color:var(--dim)}
+#burnsel button:hover{background:rgba(255,255,255,.07);color:#fff}
+#burnsel button.sel{background:rgba(255,100,40,.18);color:#ffb08a}
+
+/* ---- panel (nøgle) ---- */
+#veil{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.45);opacity:0;pointer-events:none;transition:opacity .35s}
+#veil.on{opacity:1;pointer-events:auto}
+#panel{position:fixed;z-index:21;top:12px;right:12px;bottom:12px;width:min(380px,calc(100% - 24px));border-radius:24px;padding:22px;display:flex;flex-direction:column;gap:18px;overflow:auto;transform:translateX(calc(100% + 20px));transition:transform .55s var(--ease)}
+#panel.on{transform:none}
+#panel h2{font-size:13px;font-weight:550;color:var(--dim);letter-spacing:.02em}
+.bigsig{align-self:center;width:150px;height:150px;margin:4px 0 0}
+.bigsig svg{width:100%;height:100%;animation:spin 60s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.fp{font:13px/1.6 var(--mono);letter-spacing:.12em;text-align:center;color:rgba(255,255,255,.8)}
+.fp small{display:block;font:12px var(--font);letter-spacing:0;color:var(--faint);margin-top:4px}
+.kv{display:flex;flex-direction:column;gap:2px;font-size:13px}
+.kv div{display:flex;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid var(--line)}
+.kv span{color:var(--dim)}
+.kv b{font-weight:500;font-family:var(--mono);font-size:12px;text-align:right}
+.plist{display:flex;flex-direction:column;gap:6px}
+.pl{display:flex;align-items:center;gap:10px;font-size:14px}
+.pl i{width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font:600 11px var(--font);font-style:normal}
+.pl code{margin-left:auto;font:11px var(--mono);color:var(--faint)}
+.tog{display:flex;justify-content:space-between;align-items:center;font-size:14px;padding:4px 0}
+.sw{width:42px;height:25px;border-radius:20px;background:rgba(255,255,255,.12);position:relative;transition:background .25s}
+.sw::after{content:"";position:absolute;width:19px;height:19px;border-radius:50%;background:#fff;top:3px;left:3px;transition:transform .3s var(--spring)}
+.sw.on{background:var(--red)}.sw.on::after{transform:translateX(17px)}
+
+#toast{position:fixed;z-index:60;left:50%;bottom:110px;transform:translate(-50%,20px);padding:10px 16px;border-radius:14px;font-size:13.5px;opacity:0;pointer-events:none;transition:all .35s var(--ease);white-space:nowrap}
+#toast.on{opacity:1;transform:translate(-50%,0)}
+#lightbox{position:fixed;inset:0;z-index:40;background:rgba(0,0,0,.85);display:grid;place-items:center;opacity:0;pointer-events:none;transition:opacity .3s;cursor:zoom-out}
+#lightbox.on{opacity:1;pointer-events:auto}
+#lightbox img{max-width:94vw;max-height:92vh;border-radius:12px}
+#drop{position:fixed;inset:0;z-index:30;border:2px dashed rgba(255,255,255,.25);border-radius:24px;margin:10px;display:grid;place-items:center;font-size:15px;color:var(--dim);background:rgba(6,6,7,.6);opacity:0;pointer-events:none;transition:opacity .2s}
+#drop.on{opacity:1}
+.shake{animation:shk .5s cubic-bezier(.36,.07,.19,.97)}
+@keyframes shk{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-8px)}40%,60%{transform:translateX(8px)}}
+@media (max-width:560px){.peers{display:none}.kw{display:none}.top{margin:8px 8px 0}.dock{margin:0 8px calc(8px + env(safe-area-inset-bottom))}.m{max-width:88%}#feed{padding:14px 10px 6px}.mark h1{font-size:38px}}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div id="sky"><div class="glow g1"></div><div class="glow g2"></div><div id="grain"></div></div>
+<canvas id="fx"></canvas>
+
+<section id="door" class="screen">
+  <div class="door">
+    <div class="mark"><svg viewBox="0 0 44 44" id="logo"></svg><h1>hv<b>i</b>sk</h1></div>
+    <label class="field glass"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg><input id="name" maxlength="24" placeholder="Dit navn" autocomplete="off" spellcheck="false"></label>
+    <div class="row">
+      <button class="btn red grow" id="newroom"><svg class="i" viewBox="0 0 24 24"><path d="M5 12h14"/><path d="M12 5v14"/></svg>Nyt rum</button>
+      <button class="btn ghost grow" id="joinbtn"><svg class="i" viewBox="0 0 24 24"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" r=".5"/></svg>Har et link</button>
+    </div>
+    <label class="field glass" id="joinf" hidden><svg class="i" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg><input id="joinin" placeholder="Indsæt link" autocomplete="off" spellcheck="false"></label>
+    <div id="rooms"></div>
+  </div>
+</section>
+
+<section id="chat" class="screen off">
+  <header class="top glass">
+    <button class="ib" id="back" aria-label="Tilbage"><svg class="i" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg></button>
+    <div class="sigw" id="topsig"></div>
+    <div class="who" id="who"><b id="rname"></b><span><i class="dot" id="netdot"></i><span id="rsub"></span></span></div>
+    <div class="peers" id="peers"></div>
+    <button class="ib" id="nudge" aria-label="Bank på"><svg class="i" viewBox="0 0 24 24"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"/></svg></button>
+    <button class="ib" id="invite" aria-label="Kopiér link"><svg class="i" viewBox="0 0 24 24"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg></button>
+  </header>
+  <div id="feed"><div class="space"></div></div>
+  <div id="typing"><span class="wave"><i></i><i></i><i></i></span><span id="typt"></span></div>
+  <div class="dock glass" id="dock">
+    <button class="ib" id="pic" aria-label="Billede"><svg class="i" viewBox="0 0 24 24"><rect width="18" height="18" x="3" y="3" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg></button>
+    <button class="ib" id="burn" aria-label="Brænd efter læsning"><svg class="i" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></button>
+    <div id="burnsel" class="glass"><button data-s="0">fra</button><button data-s="10">10 s</button><button data-s="30">30 s</button><button data-s="120">2 min</button></div>
+    <textarea id="msg" rows="1" placeholder="Hvisk" maxlength="4000" spellcheck="true"></textarea>
+    <button id="send" disabled aria-label="Send"><svg class="i" viewBox="0 0 24 24"><path d="M14.536 21.686a.5.5 0 0 0 .937-.024l6.5-19a.496.496 0 0 0-.635-.635l-19 6.5a.5.5 0 0 0-.024.937l7.93 3.18a2 2 0 0 1 1.112 1.11z"/><path d="m21.854 2.147-10.94 10.939"/></svg></button>
+    <input type="file" id="file" accept="image/*" hidden>
+  </div>
+</section>
+
+<div id="veil"></div>
+<aside id="panel" class="glass">
+  <div class="row" style="justify-content:space-between;align-items:center"><h2>Nøgle</h2><button class="ib" id="pclose" aria-label="Luk"><svg class="i" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg></button></div>
+  <div class="bigsig" id="bigsig"></div>
+  <div class="fp" id="fp"></div>
+  <div class="kv" id="kv"></div>
+  <h2>Her nu</h2>
+  <div class="plist" id="plist"></div>
+  <div class="tog">Lyd<span class="sw" id="sound" role="switch" tabindex="0"></span></div>
+  <div class="row"><button class="btn ghost grow" id="copy2"><svg class="i" viewBox="0 0 24 24"><rect width="14" height="14" x="8" y="8" rx="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>Kopiér link</button></div>
+  <div class="row"><button class="btn ghost grow" id="wipe">Slet beskeder på denne enhed</button></div>
+</aside>
+<div id="toast" class="glass"></div>
+<div id="lightbox"><img alt=""></div>
+<div id="drop">Slip billedet</div>
+
+<script>
+'use strict';
+const $ = (id) => document.getElementById(id);
+const enc = (t) => new TextEncoder().encode(t), dec = (b) => new TextDecoder().decode(b);
+const hex = (a) => [...a].map((x) => x.toString(16).padStart(2, '0')).join('');
+const b64 = (u) => { let s = ''; const a = new Uint8Array(u); for (let i = 0; i < a.length; i += 0x8000) s += String.fromCharCode.apply(null, a.subarray(i, i + 0x8000)); return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '') };
+const unb64 = (s) => { s = s.replace(/-/g, '+').replace(/_/g, '/'); while (s.length % 4) s += '='; const r = atob(s), a = new Uint8Array(r.length); for (let i = 0; i < r.length; i++) a[i] = r.charCodeAt(i); return a };
+const rnd = (n) => crypto.getRandomValues(new Uint8Array(n));
+const rid = (n = 8) => hex(rnd(n));
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+const S = crypto.subtle;
+const LS = { get: (k, d) => { try { const v = localStorage.getItem('hvisk.' + k); return v == null ? d : JSON.parse(v) } catch (e) { return d } }, set: (k, v) => { try { localStorage.setItem('hvisk.' + k, JSON.stringify(v)) } catch (e) {} } };
+const ICON = {
+  check: '<svg class="i" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>',
+  seen: '<svg class="i" viewBox="0 0 24 24"><path d="M18 6 7 17l-5-5"/><path d="m22 10-7.5 7.5L13 16"/></svg>',
+  lock: '<svg class="i" viewBox="0 0 24 24" style="width:13px;height:13px"><rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>',
+  x: '<svg class="i" viewBox="0 0 24 24"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>',
+  warn: '<svg class="i" viewBox="0 0 24 24" style="width:13px;height:13px"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg>',
+};
+const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+// ---------- sigil: et tegn ud fra nøglens hash. Ser I det samme tegn, har I den samme nøgle ----------
+function sigil(bytes, size = 100, mono = false) {
+  const c = size / 2, b = [...bytes], out = [];
+  const arc = (r, a0, a1, w, col, op) => {
+    const p = (a) => [c + r * Math.cos(a), c + r * Math.sin(a)];
+    const [x0, y0] = p(a0), [x1, y1] = p(a1), large = a1 - a0 > Math.PI ? 1 : 0;
+    out.push(`<path d="M${x0.toFixed(2)} ${y0.toFixed(2)}A${r} ${r} 0 ${large} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}" stroke="${col}" stroke-width="${w}" stroke-linecap="round" fill="none" opacity="${op}"/>`);
+  };
+  const rings = [0.44, 0.34, 0.24];
+  rings.forEach((rr, ri) => {
+    const n = 2 + (b[ri] % 3), r = rr * size;
+    for (let k = 0; k < n; k++) {
+      const s = ((b[3 + ri * 4 + k] / 255) + k / n) * Math.PI * 2, len = (0.18 + (b[15 + ri * 3 + k] / 255) * 0.42) * Math.PI * 2 / n * 1.6;
+      arc(r, s, s + Math.min(len, Math.PI * 2 / n * 0.92), size * (ri === 0 ? 0.035 : 0.05), ri === 1 && !mono ? '#db2430' : '#fff', ri === 2 ? 0.55 : 0.95);
+    }
+  });
+  const spokes = 3 + (b[28] % 4);
+  for (let k = 0; k < spokes; k++) {
+    const a = (b[29] / 255) * Math.PI * 2 + (k / spokes) * Math.PI * 2, r1 = size * 0.08, r2 = size * (0.13 + (b[(30 + k) % 32] / 255) * 0.06);
+    out.push(`<line x1="${(c + r1 * Math.cos(a)).toFixed(2)}" y1="${(c + r1 * Math.sin(a)).toFixed(2)}" x2="${(c + r2 * Math.cos(a)).toFixed(2)}" y2="${(c + r2 * Math.sin(a)).toFixed(2)}" stroke="#fff" stroke-width="${size * 0.025}" stroke-linecap="round" opacity=".8"/>`);
+  }
+  out.push(`<circle cx="${c}" cy="${c}" r="${size * 0.04}" fill="${mono ? '#fff' : '#ff4b55'}"/>`);
+  return `<svg class="sig" viewBox="0 0 ${size} ${size}">${out.join('')}</svg>`;
+}
+const fpText = (b) => hex(b.slice(0, 10)).toUpperCase().match(/.{4}/g).join(' ');
+function personColor(idHex) { const h = parseInt(idHex.slice(0, 4), 16) % 360; return { bg: `hsl(${h} 30% 22%)`, fg: `hsl(${h} 80% 78%)` } }
+
+// ---------- kryptering ----------
+// Rummets hemmelighed er 32 tilfældige bytes, som kun står i linkets #-del (den sendes aldrig til nogen server).
+// Fra den laves med HKDF: en AES-GCM-256-nøgle til beskederne og et kanal-id til relæet. Relæet ser kun kanal-id og støj.
+// Hver enhed har sit eget ECDSA P-256-nøglepar; alle beskeder signeres, så ingen i rummet kan udgive sig for en anden.
+async function roomKeys(secret) {
+  const base = await S.importKey('raw', secret, 'HKDF', false, ['deriveKey', 'deriveBits']);
+  const h = (info, len) => S.deriveBits({ name: 'HKDF', hash: 'SHA-256', salt: enc('hvisk/v1'), info: enc(info) }, base, len);
+  const aes = await S.deriveKey({ name: 'HKDF', hash: 'SHA-256', salt: enc('hvisk/v1'), info: enc('besked') }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+  const chan = new Uint8Array(await h('kanal', 128)), fp = new Uint8Array(await h('tegn', 256));
+  return { aes, chan: hex(chan), fp };
+}
+let me = null; // { priv, pubRaw, id }
+async function identity() {
+  let st = LS.get('id', null);
+  if (st) {
+    try {
+      const priv = await S.importKey('jwk', st.priv, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
+      const pubRaw = unb64(st.pub);
+      return { priv, pubRaw, id: hex(new Uint8Array(await S.digest('SHA-256', pubRaw))).slice(0, 16) };
+    } catch (e) {}
+  }
+  const kp = await S.generateKey({ name: 'ECDSA', namedCurve: 'P-256' }, true, ['sign', 'verify']);
+  const pubRaw = new Uint8Array(await S.exportKey('raw', kp.publicKey)), jwk = await S.exportKey('jwk', kp.privateKey);
+  LS.set('id', { priv: jwk, pub: b64(pubRaw) });
+  return identity();
+}
+const pubCache = new Map();
+async function verifyKey(raw64) {
+  if (!pubCache.has(raw64)) {
+    const raw = unb64(raw64);
+    pubCache.set(raw64, Promise.all([S.importKey('raw', raw, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['verify']), S.digest('SHA-256', raw)]).then(([k, d]) => ({ k, id: hex(new Uint8Array(d)).slice(0, 16) })));
+  }
+  return pubCache.get(raw64);
+}
+async function seal(body) {
+  const p = enc(JSON.stringify(body));
+  const sig = new Uint8Array(await S.sign({ name: 'ECDSA', hash: 'SHA-256' }, me.priv, p));
+  const inner = enc(JSON.stringify({ p: b64(p), s: b64(sig), k: b64(me.pubRaw) }));
+  const iv = rnd(12);
+  const c = new Uint8Array(await S.encrypt({ name: 'AES-GCM', iv, additionalData: enc(room.chan) }, room.aes, inner));
+  return { v: 1, iv: b64(iv), c: b64(c) };
+}
+async function open(env) {
+  if (!env || env.v !== 1 || typeof env.iv !== 'string' || typeof env.c !== 'string') return null;
+  let inner;
+  try { inner = JSON.parse(dec(await S.decrypt({ name: 'AES-GCM', iv: unb64(env.iv), additionalData: enc(room.chan) }, room.aes, unb64(env.c)))) } catch (e) { return null }
+  try {
+    const { k, id } = await verifyKey(inner.k), p = unb64(inner.p);
+    const ok = await S.verify({ name: 'ECDSA', hash: 'SHA-256' }, k, unb64(inner.s), p);
+    if (!ok) return null;
+    const body = JSON.parse(dec(p));
+    if (!body || typeof body !== 'object') return null;
+    body.who = id; return body;
+  } catch (e) { return null }
+}
+
+// ---------- relæ (MQTT 3.1.1 over wss, samme som Kort) ----------
+const BROKERS = ['wss://broker.emqx.io:8084/mqtt', 'wss://test.mosquitto.org:8081/mqtt'];
+class Relay {
+  constructor(url) { this.url = url; this.subs = new Set(); this.on = null; this.ws = null; this.alive = true; this.pid = 1; this.buf = new Uint8Array(0); this.up = false; this.onstate = null }
+  open() {
+    this.buf = new Uint8Array(0);
+    return new Promise((resolve) => {
+      let done = false; const fin = (ok) => { if (!done) { done = true; resolve(ok) } };
+      let ws; try { ws = new WebSocket(this.url, ['mqtt']) } catch (e) { return fin(false) }
+      ws.binaryType = 'arraybuffer'; this.ws = ws;
+      const to = setTimeout(() => { fin(false); try { ws.close() } catch (e) {} }, 7000);
+      ws.onopen = () => { const id = enc('hv' + rid(8)); this.raw(0x10, [0, 4, 77, 81, 84, 84, 4, 2, 0, 40, id.length >> 8, id.length & 255, ...id]) };
+      ws.onmessage = (e) => this.feed(new Uint8Array(e.data), () => { clearTimeout(to); this.up = true; for (const t of this.subs) this.subRaw(t); fin(true); this.onstate && this.onstate(true) });
+      ws.onclose = () => {
+        clearTimeout(to); fin(false);
+        const was = this.up; this.up = false;
+        if (this.onstate) this.onstate(false);
+        if (this.alive && was) setTimeout(() => { if (this.alive) this.open() }, 1200);
+      };
+      ws.onerror = () => {};
+    });
+  }
+  close() { this.alive = false; clearInterval(this.pingT); try { this.ws.close() } catch (e) {} }
+  len(n) { const o = []; do { let b = n % 128; n = Math.floor(n / 128); if (n > 0) b |= 128; o.push(b) } while (n > 0); return o }
+  raw(h, body) { if (this.ws && this.ws.readyState === 1) this.ws.send(new Uint8Array([h, ...this.len(body.length), ...body])) }
+  str(t) { const b = enc(t); return [b.length >> 8, b.length & 255, ...b] }
+  sub(t) { this.subs.add(t); if (this.up) this.subRaw(t) }
+  subRaw(t) { const id = this.pid++ & 0xffff || 1; this.raw(0x82, [id >> 8, id & 255, ...this.str(t), 0]) }
+  pub(t, obj) {
+    if (!this.up) return false;
+    const p = enc(JSON.stringify(obj)), tb = this.str(t);
+    const body = new Uint8Array(tb.length + p.length); body.set(tb); body.set(p, tb.length);
+    const hdr = [0x30, ...this.len(body.length)];
+    const out = new Uint8Array(hdr.length + body.length); out.set(hdr); out.set(body, hdr.length);
+    try { this.ws.send(out); return true } catch (e) { return false }
+  }
+  feed(d, onConnack) {
+    const b = new Uint8Array(this.buf.length + d.length); b.set(this.buf); b.set(d, this.buf.length);
+    let i = 0;
+    for (;;) {
+      if (b.length - i < 2) break;
+      let mul = 1, len = 0, j = i + 1, byte;
+      do { if (j >= b.length) { j = -1; break } byte = b[j++]; len += (byte & 127) * mul; mul *= 128 } while (byte & 128);
+      if (j < 0 || b.length - j < len) break;
+      const type = b[i] >> 4, flags = b[i] & 15, body = b.subarray(j, j + len);
+      if (type === 2) { if (body[1] === 0) { onConnack(); clearInterval(this.pingT); this.pingT = setInterval(() => this.raw(0xc0, []), 20000) } }
+      else if (type === 3) {
+        const tl = (body[0] << 8) | body[1], topic = dec(body.subarray(2, 2 + tl));
+        let k = 2 + tl; if ((flags >> 1) & 3) k += 2;
+        let o = null; try { o = JSON.parse(dec(body.subarray(k))) } catch (e) {}
+        if (o && typeof o === 'object' && this.on) { try { this.on(topic, o) } catch (e) { console.error(e) } }
+      }
+      i = j + len;
+    }
+    this.buf = b.slice(i);
+  }
+}
+
+// ---------- lager (IndexedDB, kun krypterede konvolutter) ----------
+const DB = (() => {
+  let p = null;
+  const db = () => p || (p = new Promise((res, rej) => { const r = indexedDB.open('hvisk', 1); r.onupgradeneeded = () => { const s = r.result.createObjectStore('env', { keyPath: 'k' }); s.createIndex('room', 'room') }; r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error) }));
+  const tx = async (mode, fn) => { const d = await db(); return new Promise((res, rej) => { const t = d.transaction('env', mode), s = t.objectStore('env'); const out = fn(s); t.oncomplete = () => res(out && out.result !== undefined ? out.result : out); t.onerror = () => rej(t.error) }) };
+  return {
+    put: (room, id, at, env) => tx('readwrite', (s) => s.put({ k: room + '|' + id, room, id, at, env })).catch(() => {}),
+    del: (room, id) => tx('readwrite', (s) => s.delete(room + '|' + id)).catch(() => {}),
+    all: (room) => tx('readonly', (s) => s.index('room').getAll(room)).then((a) => (a || []).sort((x, y) => x.at - y.at)).catch(() => []),
+    wipe: async (room) => { const a = await DB.all(room); await tx('readwrite', (s) => { for (const r of a) s.delete(r.k) }).catch(() => {}) },
+  };
+})();
+
+// ---------- tilstand ----------
+let room = null, relay = null, peers = new Map(), seen = new Set(), burnSec = 0, sound = LS.get('sound', true), msgs = new Map();
+let lastFrom = null, lastDay = '', typingFrom = new Map(), lastTyp = 0, pendingSeen = new Set();
+const myName = () => ($('name').value.trim() || 'Anonym').slice(0, 24);
+$('name').value = LS.get('name', '');
+$('name').addEventListener('input', () => LS.set('name', $('name').value.trim()));
+$('logo').innerHTML = sigil(enc('hvisk-logo-red-light-0001-abcdef'), 44).replace(/^<svg[^>]*>|<\/svg>$/g, '');
+
+function parseLink(s) {
+  s = String(s || '').trim(); const h = s.includes('#') ? s.slice(s.indexOf('#') + 1) : s;
+  const q = new URLSearchParams(h), k = q.get('k');
+  if (!k) return null;
+  try { const sec = unb64(k); if (sec.length !== 32) return null; return { secret: k, name: (q.get('n') || 'Rum').slice(0, 40) } } catch (e) { return null }
+}
+const linkOf = (r) => location.origin + location.pathname + '#n=' + encodeURIComponent(r.name) + '&k=' + r.secret;
+
+function savedRooms() { return LS.get('rooms', []) }
+function rememberRoom(r) { const a = savedRooms().filter((x) => x.secret !== r.secret); a.unshift({ name: r.name, secret: r.secret, at: Date.now() }); LS.set('rooms', a.slice(0, 30)) }
+async function renderRooms() {
+  const a = savedRooms(), box = $('rooms'); box.innerHTML = '';
+  for (const r of a) {
+    const k = await roomKeys(unb64(r.secret));
+    const el = document.createElement('button'); el.className = 'rc glass';
+    el.innerHTML = `${sigil(k.fp, 36)}<div class="t"><b>${esc(r.name)}</b><span>${fpText(k.fp).slice(0, 14)}</span></div><span class="x" title="Glem rummet">${ICON.x}</span>`;
+    el.onclick = (e) => { if (e.target.closest('.x')) { e.stopPropagation(); return forget(r, el) } enterRoom(r) };
+    box.appendChild(el);
+  }
+}
+async function forget(r, el) {
+  el.style.transition = 'all .4s var(--ease)'; el.style.opacity = 0; el.style.transform = 'translateX(30px)';
+  LS.set('rooms', savedRooms().filter((x) => x.secret !== r.secret));
+  const k = await roomKeys(unb64(r.secret)); DB.wipe(k.chan);
+  setTimeout(renderRooms, 400);
+}
+
+$('newroom').onclick = () => {
+  if (!$('name').value.trim()) { $('name').focus(); return shakeEl($('name').parentNode) }
+  const n = myName();
+  enterRoom({ name: n.endsWith('s') ? n + ' rum' : n + 's rum', secret: b64(rnd(32)) }, true);
+};
+$('joinbtn').onclick = () => { $('joinf').hidden = false; $('joinin').focus() };
+$('joinin').addEventListener('input', () => { const r = parseLink($('joinin').value); if (r) { $('joinin').value = ''; $('joinf').hidden = true; enterRoom(r) } });
+$('joinin').addEventListener('keydown', (e) => { if (e.key === 'Enter') { const r = parseLink($('joinin').value); r ? enterRoom(r) : shakeEl($('joinf')) } });
+function shakeEl(el) { el.classList.remove('shake'); void el.offsetWidth; el.classList.add('shake') }
+
+async function enterRoom(r, fresh = false) {
+  if (!$('name').value.trim()) { $('name').focus(); shakeEl($('name').parentNode); toast('Skriv dit navn først'); pendingRoom = r; return }
+  const k = await roomKeys(unb64(r.secret));
+  room = { ...r, ...k }; rememberRoom(r);
+  history.replaceState(null, '', location.pathname + '#n=' + encodeURIComponent(r.name) + '&k=' + r.secret);
+  peers.clear(); seen.clear(); msgs.clear(); typingFrom.clear(); lastFrom = null; lastDay = '';
+  $('feed').innerHTML = '<div class="space"></div>';
+  $('rname').textContent = r.name; $('topsig').innerHTML = sigil(room.fp, 40);
+  renderPeers();
+  $('door').classList.add('off'); $('chat').classList.remove('off');
+  if (fresh) sys(`${ICON.lock} Nyt rum. Send linket til den, du vil skrive med.`);
+  const stored = await DB.all(room.chan);
+  for (const s of stored) { const b = await open(s.env); if (b) show(b, s.env, { quiet: true }) }
+  scrollDown(false);
+  connect();
+  if (!matchMedia('(hover:none)').matches) $('msg').focus();
+}
+let pendingRoom = null;
+$('name').addEventListener('keydown', (e) => { if (e.key === 'Enter' && pendingRoom && $('name').value.trim()) { const r = pendingRoom; pendingRoom = null; enterRoom(r) } });
+
+$('back').onclick = leave;
+function leave() {
+  if (relay) { send({ t: 'bye' }); const r = relay; relay = null; setTimeout(() => r.close(), 150) }
+  clearInterval(hbT); room = null; history.replaceState(null, '', location.pathname);
+  $('chat').classList.add('off'); $('door').classList.remove('off'); closePanel(); renderRooms();
+}
+
+// ---------- net ----------
+let hbT = null, connSeq = 0;
+async function connect() {
+  const seq = ++connSeq; setNet('Forbinder');
+  for (const url of BROKERS) {
+    const r = new Relay(url);
+    if (await r.open()) {
+      if (seq !== connSeq || !room) { r.close(); return }
+      relay = r; const topic = 'hvisk/v1/' + room.chan;
+      r.on = (t, m) => { if (t === topic) incoming(m) };
+      r.onstate = (ok) => { setNet(ok ? null : 'Forbinder igen'); if (ok) hello() };
+      r.sub(topic); setNet(null); hello();
+      clearInterval(hbT); hbT = setInterval(() => { send({ t: 'hb', n: myName() }); prunePeers() }, 6000);
+      return;
+    }
+    r.close();
+  }
+  if (seq === connSeq) { setNet('Ingen forbindelse'); setTimeout(() => room && seq === connSeq && connect(), 4000) }
+}
+function hello() { const last = [...msgs.values()].reduce((a, m) => Math.max(a, m.at || 0), 0); send({ t: 'hej', n: myName(), since: last }) }
+async function send(body) {
+  if (!relay || !room) return null;
+  body.id = body.id || rid(8); body.at = body.at || Date.now(); body.n = body.n || myName();
+  const env = await seal(body);
+  relay.pub('hvisk/v1/' + room.chan, env);
+  return env;
+}
+function setNet(txt) {
+  $('netdot').classList.toggle('live', !txt);
+  netTxt = txt; renderSub();
+}
+let netTxt = 'Forbinder';
+function renderSub() {
+  const n = [...peers.values()].filter((p) => p.who !== me.id).length;
+  $('rsub').innerHTML = netTxt ? esc(netTxt) : (n ? `${n === 1 ? esc([...peers.values()][0].n) + ' er her' : n + ' er her'} &middot; ${ICON.lock}<span class="kw"> krypteret</span>` : `Venter på nogen &middot; ${ICON.lock}<span class="kw"> krypteret</span>`);
+}
+
+const syncWait = new Map();
+async function incoming(env) {
+  const b = await open(env);
+  if (!b || !room) return;
+  const mine = b.who === me.id;
+  if (b.t === 'msg') { if (typingFrom.delete(b.who)) renderTyping(); if (!mine || !msgs.has(b.id)) show(b, env); return }
+  if (mine) return;
+  if (b.t === 'hb' || b.t === 'hej') {
+    const isNew = !peers.has(b.who);
+    peers.set(b.who, { who: b.who, n: String(b.n || '').slice(0, 24), at: Date.now() });
+    if (isNew) { renderPeers(); if (b.t === 'hej') { sys(`${esc(b.n)} kom ind`); blip(520, .05) } }
+    if (b.t === 'hej') { send({ t: 'hb', n: myName() }); offerSync(b) }
+    return;
+  }
+  if (b.t === 'bye') { const p = peers.get(b.who); if (p) { peers.delete(b.who); renderPeers(); sys(`${esc(p.n)} gik`) } return }
+  if (b.t === 'typ') { typingFrom.set(b.who, { n: b.n, at: Date.now() }); renderTyping(); return }
+  if (b.t === 'set') { for (const id of (b.ids || []).slice(0, 200)) { const m = msgs.get(id); if (m && m.who === me.id) markSeen(m) } return }
+  if (b.t === 'bank') { peers.has(b.who) || peers.set(b.who, { who: b.who, n: b.n, at: Date.now() }); knock(b.n); return }
+  if (b.t === 'synk') { syncWait.delete(b.to); return }
+}
+// Når nogen kommer ind, sender én af dem der allerede er her, de krypterede beskeder de mangler (præcis som de blev sendt).
+function offerSync(b) {
+  const since = +b.since || 0;
+  const want = [...msgs.values()].filter((m) => m.at > since && !m.burn && m.env);
+  if (!want.length) return;
+  const t = setTimeout(async () => {
+    if (!syncWait.has(b.who)) return; syncWait.delete(b.who);
+    send({ t: 'synk', to: b.who });
+    for (const m of want.slice(-200)) { relay && relay.pub('hvisk/v1/' + room.chan, m.env); await sleep(25) }
+  }, 150 + Math.random() * 900);
+  syncWait.set(b.who, t);
+}
+function prunePeers() {
+  let ch = false; for (const [k, p] of peers) if (Date.now() - p.at > 16000) { peers.delete(k); ch = true }
+  if (ch) renderPeers();
+}
+function renderPeers() {
+  const list = [...peers.values()];
+  $('peers').innerHTML = list.slice(0, 4).map((p) => { const c = personColor(p.who); return `<i style="background:${c.bg};color:${c.fg}" title="${esc(p.n)}">${esc((p.n || '?')[0].toUpperCase())}</i>` }).join('');
+  renderSub(); if ($('panel').classList.contains('on')) renderPanel();
+}
+function renderTyping() {
+  for (const [k, v] of typingFrom) if (Date.now() - v.at > 4000) typingFrom.delete(k);
+  const n = [...typingFrom.values()].map((v) => v.n);
+  $('typing').classList.toggle('on', n.length > 0);
+  if (n.length) $('typt').textContent = n.length === 1 ? n[0] + ' skriver' : n.join(' og ') + ' skriver';
+}
+setInterval(renderTyping, 1000);
+
+// ---------- beskeder ----------
+const fmtT = (t) => new Date(t).toLocaleTimeString('da-DK', { hour: '2-digit', minute: '2-digit' });
+const fmtD = (t) => { const d = new Date(t), n = new Date(); if (d.toDateString() === n.toDateString()) return 'I dag'; const y = new Date(n - 864e5); if (d.toDateString() === y.toDateString()) return 'I går'; return d.toLocaleDateString('da-DK', { day: 'numeric', month: 'long' }) };
+function sys(html) { const el = document.createElement('div'); el.className = 'sys'; el.innerHTML = html; $('feed').appendChild(el); lastFrom = null; scrollDown() }
+
+function show(b, env, o = {}) {
+  if (seen.has(b.id)) return; seen.add(b.id);
+  const text = typeof b.x === 'string' ? b.x.slice(0, 4000) : '', img = typeof b.img === 'string' && b.img.startsWith('data:image/') ? b.img : null;
+  if (!text && !img) return;
+  const at = Math.min(+b.at || Date.now(), Date.now() + 60000), mine = b.who === me.id, burn = Math.min(Math.max(+b.burn || 0, 0), 600);
+  const m = { id: b.id, at, who: b.who, n: String(b.n || 'Anonym').slice(0, 24), env, burn, el: null };
+  msgs.set(b.id, m);
+  const day = fmtD(at);
+  if (day !== lastDay) { const d = document.createElement('div'); d.className = 'day'; d.textContent = day; $('feed').appendChild(d); lastDay = day; lastFrom = null }
+  const prev = $('feed').lastElementChild;
+  const joined = lastFrom === b.who && prev && prev.classList.contains('m') && at - (+prev.dataset.at) < 5 * 60e3;
+  if (joined) prev.classList.remove('last');
+  const el = document.createElement('div');
+  el.className = 'm last' + (mine ? ' me' : '') + (joined ? '' : ' join') + (burn ? ' burn' : '');
+  el.dataset.at = at; el.dataset.id = b.id;
+  const c = personColor(b.who);
+  el.innerHTML = `<div class="av" style="background:${c.bg};color:${c.fg}">${esc(m.n[0].toUpperCase())}</div><div class="bub">${!mine && !joined ? `<span class="nm" style="color:${c.fg}">${esc(m.n)}</span>` : ''}${img ? `<img alt="" src="${img}">` : ''}<span class="tx"></span><span class="meta">${burn ? ringSvg() : ''}<span>${fmtT(at)}</span>${mine ? `<span class="st">${ICON.check}</span>` : ''}</span>${mine && !o.quiet ? `<span class="ct">${esc(env.c.slice(0, 160))}</span>` : ''}</div>`;
+  if (o.quiet) el.style.animation = 'none';
+  const tx = el.querySelector('.tx');
+  m.el = el; $('feed').appendChild(el); lastFrom = b.who;
+  if (img) el.querySelector('img').onclick = () => { $('lightbox').querySelector('img').src = img; $('lightbox').classList.add('on') };
+  if (mine || o.quiet) { tx.textContent = text; if (mine && !o.quiet) { const ct = el.querySelector('.ct'); requestAnimationFrame(() => ct.classList.add('show')); setTimeout(() => ct.classList.remove('show'), 1600); setTimeout(() => ct.remove(), 2200); sparkFrom(el, true) } }
+  else { decrypt(tx, text, env.c); blip(880, .04); sparkFrom(el, false); if (document.hidden) bumpTitle() }
+  if (!mine) { pendingSeen.add(b.id); flushSeen() }
+  if (burn) startBurn(m, mine ? burn : burn);
+  else if (!o.quiet) DB.put(room.chan, b.id, at, env);
+  scrollDown();
+}
+// Indkommende tekst "låses op" fra den rigtige kodetekst, tegn for tegn.
+function decrypt(el, text, ct) {
+  const pool = ct.replace(/[^A-Za-z0-9]/g, '') || 'x', n = text.length, t0 = performance.now(), dur = Math.min(250 + n * 18, 1100);
+  if (n > 600) { el.textContent = text; return }
+  const step = (now) => {
+    const p = Math.min((now - t0) / dur, 1), k = Math.floor(p * n);
+    let s = ''; for (let i = k; i < n; i++) s += /\s/.test(text[i]) ? text[i] : pool[(i * 7 + Math.floor(now / 40)) % pool.length];
+    el.innerHTML = esc(text.slice(0, k)) + (s ? `<span class="scr">${esc(s)}</span>` : '');
+    if (p < 1) requestAnimationFrame(step); else el.textContent = text;
+  };
+  requestAnimationFrame(step);
+}
+const flushSeen = (() => { let t = null; return () => { clearTimeout(t); t = setTimeout(() => { if (document.hidden || !pendingSeen.size) return; send({ t: 'set', ids: [...pendingSeen] }); pendingSeen.clear() }, 600) } })();
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { flushSeen(); document.title = 'hvisk'; unread = 0 } });
+function markSeen(m) { const st = m.el && m.el.querySelector('.st'); if (st && !st.dataset.seen) { st.dataset.seen = 1; st.innerHTML = ICON.seen; st.animate([{ transform: 'scale(.4)', opacity: 0 }, { transform: 'scale(1)', opacity: 1 }], { duration: 400, easing: 'cubic-bezier(.34,1.56,.64,1)' }) } }
+let unread = 0; function bumpTitle() { unread++; document.title = `(${unread}) hvisk` }
+function scrollDown(smooth = true) { const f = $('feed'); f.style.scrollBehavior = smooth ? 'smooth' : 'auto'; requestAnimationFrame(() => { f.scrollTop = f.scrollHeight }) }
+
+// brænd: tæller ned og opløses i gløder, hos alle
+const ringSvg = () => '<svg class="ring" viewBox="0 0 16 16"><circle class="bg" cx="8" cy="8" r="6"/><circle class="fg" cx="8" cy="8" r="6" stroke-dasharray="37.7" stroke-dashoffset="0"/></svg>';
+function startBurn(m, sec) {
+  const fg = m.el.querySelector('.ring .fg'), t0 = Date.now();
+  const go = () => {
+    const left = sec * 1000 - (Date.now() - t0);
+    if (fg) fg.style.strokeDashoffset = 37.7 * (1 - Math.max(left, 0) / (sec * 1000));
+    if (left > 0) return setTimeout(go, 100);
+    embers(m.el.querySelector('.bub')); m.el.classList.add('gone');
+    setTimeout(() => { m.el.remove(); msgs.delete(m.id) }, 700);
+  };
+  go();
+}
+
+// ---------- effekter ----------
+const fx = $('fx'), cx = fx.getContext('2d'); let parts = [], fxOn = false;
+function fit() { const d = Math.min(devicePixelRatio || 1, 2); fx.width = innerWidth * d; fx.height = innerHeight * d; cx.setTransform(d, 0, 0, d, 0, 0) }
+addEventListener('resize', fit); fit();
+function loop() {
+  cx.clearRect(0, 0, innerWidth, innerHeight);
+  parts = parts.filter((p) => p.life > 0);
+  for (const p of parts) {
+    p.x += p.vx; p.y += p.vy; p.vy += p.g; p.vx *= .985; p.life -= p.dl;
+    cx.globalAlpha = Math.max(p.life, 0); cx.fillStyle = p.c;
+    cx.beginPath(); cx.arc(p.x, p.y, p.r * (0.5 + p.life * 0.5), 0, 6.283); cx.fill();
+  }
+  cx.globalAlpha = 1;
+  if (parts.length) requestAnimationFrame(loop); else fxOn = false;
+}
+const kick = () => { if (!fxOn) { fxOn = true; requestAnimationFrame(loop) } };
+function sparkFrom(el, mine) {
+  requestAnimationFrame(() => {
+    const r = el.querySelector('.bub').getBoundingClientRect(); if (!r.width) return;
+    const x = mine ? r.right : r.left, y = r.bottom - 6;
+    for (let i = 0; i < 14; i++) parts.push({ x, y, vx: (mine ? -1 : 1) * Math.random() * 2.2, vy: -Math.random() * 2.4, g: .05, r: 1 + Math.random() * 1.6, life: 1, dl: .02 + Math.random() * .02, c: i % 3 ? '#ff4b55' : '#ffffff' });
+    kick();
+  });
+}
+function embers(bub) {
+  const r = bub.getBoundingClientRect();
+  for (let i = 0; i < 90; i++) parts.push({ x: r.left + Math.random() * r.width, y: r.top + Math.random() * r.height, vx: (Math.random() - .5) * 1.4, vy: -Math.random() * 2.6 - .4, g: -.02, r: 1 + Math.random() * 2.2, life: 1, dl: .012 + Math.random() * .02, c: ['#ff6a2a', '#ffb347', '#db2430', '#fff1d6'][i % 4] });
+  kick(); blip(180, .06, 'sawtooth', .35);
+}
+function knock(name) {
+  const f = $('chat'); shakeEl(f); document.body.classList.add('pulse'); setTimeout(() => document.body.classList.remove('pulse'), 2500);
+  const cxp = innerWidth / 2, cyp = 40;
+  for (let i = 0; i < 70; i++) { const a = Math.random() * 6.283, v = 2 + Math.random() * 5; parts.push({ x: cxp, y: cyp, vx: Math.cos(a) * v, vy: Math.sin(a) * v + 1.5, g: .03, r: 1.2 + Math.random() * 2, life: 1, dl: .014 + Math.random() * .015, c: i % 2 ? '#ff4b55' : '#fff' }) }
+  kick(); blip(90, .2, 'sine', .25); setTimeout(() => blip(70, .2, 'sine', .25), 140);
+  if (name) sys(`${esc(name)} bankede på`);
+  if (document.hidden) bumpTitle();
+}
+let actx = null;
+function blip(f = 660, vol = .05, type = 'sine', dur = .14) {
+  if (!sound) return;
+  try {
+    actx = actx || new (window.AudioContext || window.webkitAudioContext)();
+    const o = actx.createOscillator(), g = actx.createGain(), t = actx.currentTime;
+    o.type = type; o.frequency.setValueAtTime(f, t); o.frequency.exponentialRampToValueAtTime(f * .6, t + dur);
+    g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(vol, t + .01); g.gain.exponentialRampToValueAtTime(.0001, t + dur);
+    o.connect(g).connect(actx.destination); o.start(t); o.stop(t + dur + .02);
+  } catch (e) {}
+}
+let toastT = null;
+function toast(t) { const el = $('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toastT); toastT = setTimeout(() => el.classList.remove('on'), 2200) }
+
+// ---------- skrivefelt ----------
+const msgEl = $('msg');
+function autosize() { msgEl.style.height = 'auto'; msgEl.style.height = Math.min(msgEl.scrollHeight, 160) + 'px'; $('send').disabled = !msgEl.value.trim() }
+msgEl.addEventListener('input', () => { autosize(); if (Date.now() - lastTyp > 2500 && msgEl.value.trim()) { lastTyp = Date.now(); send({ t: 'typ' }) } });
+msgEl.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) { e.preventDefault(); submit() } });
+$('send').onclick = submit;
+async function submit(img) {
+  const x = msgEl.value.trim(); if (!x && typeof img !== 'string') return;
+  if (!relay || !relay.up) { toast('Ikke forbundet endnu'); return }
+  const body = { t: 'msg', x: typeof img === 'string' ? '' : x };
+  if (typeof img === 'string') body.img = img; else { msgEl.value = ''; autosize() }
+  if (burnSec) body.burn = burnSec;
+  body.id = rid(8); body.at = Date.now(); body.n = myName();
+  const env = await seal(body);
+  body.who = me.id; show(body, env);
+  relay.pub('hvisk/v1/' + room.chan, env); lastTyp = 0;
+}
+$('burn').onclick = (e) => { e.stopPropagation(); $('burnsel').classList.toggle('on') };
+$('burnsel').onclick = (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  burnSec = +b.dataset.s; $('burnsel').classList.remove('on'); paintBurn(); msgEl.focus();
+  if (burnSec) toast(`Beskeder brænder ${b.textContent} efter de er set`);
+};
+function paintBurn() { for (const b of $('burnsel').children) b.classList.toggle('sel', +b.dataset.s === burnSec); $('burn').classList.toggle('on', !!burnSec); $('dock').classList.toggle('burning', !!burnSec); msgEl.placeholder = burnSec ? 'Hvisk, det brænder bagefter' : 'Hvisk' }
+paintBurn();
+document.addEventListener('click', (e) => { if (!e.target.closest('#burnsel')) $('burnsel').classList.remove('on') });
+$('nudge').onclick = () => { if (!relay) return; send({ t: 'bank' }); knock(null); toast('Du bankede på') };
+
+// billeder: komprimeres og krypteres som alt andet
+$('pic').onclick = () => $('file').click();
+$('file').onchange = () => { const f = $('file').files[0]; if (f) sendImage(f); $('file').value = '' };
+async function sendImage(f) {
+  if (!f.type.startsWith('image/')) return;
+  try {
+    const bmp = await createImageBitmap(f), s = Math.min(1, 1280 / Math.max(bmp.width, bmp.height));
+    const c = document.createElement('canvas'); c.width = Math.round(bmp.width * s); c.height = Math.round(bmp.height * s);
+    c.getContext('2d').drawImage(bmp, 0, 0, c.width, c.height);
+    let q = .82, url = c.toDataURL('image/jpeg', q);
+    while (url.length > 420000 && q > .4) { q -= .12; url = c.toDataURL('image/jpeg', q) }
+    submit(url);
+  } catch (e) { toast('Billedet kunne ikke læses') }
+}
+msgEl.addEventListener('paste', (e) => { const it = [...(e.clipboardData || {}).items || []].find((i) => i.type.startsWith('image/')); if (it) { e.preventDefault(); sendImage(it.getAsFile()) } });
+let dragN = 0;
+addEventListener('dragenter', (e) => { if (room && e.dataTransfer.types.includes('Files')) { dragN++; $('drop').classList.add('on') } });
+addEventListener('dragleave', () => { if (--dragN <= 0) { dragN = 0; $('drop').classList.remove('on') } });
+addEventListener('dragover', (e) => e.preventDefault());
+addEventListener('drop', (e) => { e.preventDefault(); dragN = 0; $('drop').classList.remove('on'); const f = e.dataTransfer.files[0]; if (room && f) sendImage(f) });
+$('lightbox').onclick = () => $('lightbox').classList.remove('on');
+
+// ---------- panel ----------
+async function copyLink() {
+  const l = linkOf(room);
+  try { await navigator.clipboard.writeText(l) } catch (e) { const t = document.createElement('textarea'); t.value = l; document.body.appendChild(t); t.select(); document.execCommand('copy'); t.remove() }
+  toast('Linket er kopieret. Del det kun med den, du vil skrive med.');
+}
+$('invite').onclick = copyLink; $('copy2').onclick = copyLink;
+$('who').onclick = $('topsig').onclick = openPanel;
+$('pclose').onclick = $('veil').onclick = closePanel;
+function openPanel() { renderPanel(); $('panel').classList.add('on'); $('veil').classList.add('on') }
+function closePanel() { $('panel').classList.remove('on'); $('veil').classList.remove('on') }
+function renderPanel() {
+  if (!room) return;
+  $('bigsig').innerHTML = sigil(room.fp, 150);
+  $('fp').innerHTML = `${fpText(room.fp)}<small>Ser de andre det samme tegn og de samme tal, har I den samme nøgle.</small>`;
+  $('kv').innerHTML = `<div><span>Kryptering</span><b>AES-GCM 256</b></div><div><span>Underskrift</span><b>ECDSA P-256</b></div><div><span>Din enhed</span><b>${me.id.slice(0, 12).toUpperCase().match(/.{4}/g).join(' ')}</b></div><div><span>Relæ</span><b>${relay ? new URL(relay.url).hostname : '-'}</b></div>`;
+  const list = [{ who: me.id, n: myName() + ' (dig)' }, ...peers.values()];
+  $('plist').innerHTML = list.map((p) => { const c = personColor(p.who); return `<div class="pl"><i style="background:${c.bg};color:${c.fg}">${esc((p.n || '?')[0].toUpperCase())}</i>${esc(p.n)}<code>${p.who.slice(0, 8).toUpperCase()}</code></div>` }).join('');
+  $('sound').classList.toggle('on', sound);
+}
+$('sound').onclick = $('sound').onkeydown = (e) => { if (e.type === 'keydown' && e.key !== ' ' && e.key !== 'Enter') return; e.preventDefault(); sound = !sound; LS.set('sound', sound); $('sound').classList.toggle('on', sound) };
+$('wipe').onclick = async () => { if (!room) return; await DB.wipe(room.chan); for (const m of msgs.values()) m.el && m.el.remove(); msgs.clear(); seen.clear(); lastFrom = null; lastDay = ''; closePanel(); toast('Slettet på denne enhed') };
+addEventListener('keydown', (e) => { if (e.key === 'Escape') { closePanel(); $('lightbox').classList.remove('on'); $('burnsel').classList.remove('on') } });
+addEventListener('pagehide', () => { if (relay && room) send({ t: 'bye' }) });
+
+// ---------- start ----------
+(async () => {
+  if (!window.isSecureContext || !crypto.subtle) { document.body.innerHTML = '<p style="padding:40px;color:#fff">Siden skal åbnes over https.</p>'; return }
+  me = await identity();
+  await renderRooms();
+  const r = parseLink(location.hash);
+  if (r) { if ($('name').value.trim()) enterRoom(r); else { pendingRoom = r; $('name').focus(); $('newroom').hidden = true; $('joinbtn').innerHTML = 'Gå ind i ' + esc(r.name); $('joinbtn').onclick = () => enterRoom(r); $('joinbtn').className = 'btn red grow' } }
+  else if (!matchMedia('(hover:none)').matches) $('name').focus();
+  if ('serviceWorker' in navigator && location.protocol === 'https:') navigator.serviceWorker.register('sw.js').catch(() => {});
+})();
+</script>
+</body>
+</html>
